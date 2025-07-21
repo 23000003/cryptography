@@ -2,27 +2,29 @@
 #define TRANSVERNAMAES_H
 
 #define MAX_LEN 500
+#define MAX_VALUE 100
+#define TOTAL_PROCESS 3
 
 // global vars Trans
-#define MAX_VALUE 100
-char key[MAX_VALUE];
-int *mappedKey;
+extern unsigned char key[MAX_VALUE];
+extern unsigned int *mappedKey;
 
 // Vernam
-int letterToNumber(char c);
-char numberToLetter(int n, int isUpper);
-void convertBinary(int num, int bin[8]);
-int convertDecimal(int bin[8]);
-void printBinary(int bin[8]);
-int simpleHash(const char* str);
-void vernamEncrypt(const char* input, const char* key, char* output, int* xorDecimal);
-void vernamDecrypt(const int* xorDecimal, const char* key, const char* original, char* output);
+void vernamEncrypt(const unsigned char *input, unsigned char *output, size_t len);
+void vernamDecrypt(const unsigned char *input, unsigned char *output, size_t len);
 
 // Trans
-void encrypt(const char* plainText, char* encrypted);
-void decrypt(const char* encrypted, char* decrypted);
+void encryptTranspositional(const unsigned char* plainText, unsigned char* encrypted, size_t fileContentLen);
+void decryptTranspositional(const unsigned char* encrypted, unsigned char* decrypted, size_t fileContentLen);
 void map_encryption_key();
 
 // AES
+
+
+// submain
+int hashContent(const unsigned char *input);
+void startProgram(const unsigned char *input, unsigned char *output, size_t fileContentLen);
+void determineOrder(int *order, const unsigned char *key, int operation);
+void encryptAndDecrypt(const unsigned char *input, unsigned char *output, int *order, int operation, size_t fileContentLen);
 
 #endif

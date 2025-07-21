@@ -5,16 +5,15 @@
 #include <stdlib.h>
 #include "transvernamaes.h"
 
-void map_encryption_key(){
-    // init map key for encrpytion and decryption
+unsigned int *mappedKey;
+
+void map_encryption_key() {
     int keyLen = strlen(key);
     mappedKey = malloc(sizeof(int) * keyLen);
-    
+
     int i, j;
-    
     for (i = 0; i < keyLen; i++) mappedKey[i] = i;
 
-    // sort based on key characters (asc order)
     for (i = 0; i < keyLen - 1; i++) {
         for (j = i + 1; j < keyLen; j++) {
             if (key[mappedKey[i]] > key[mappedKey[j]]) {
@@ -26,64 +25,65 @@ void map_encryption_key(){
     }
 }
 
-void encrypt(const char* plainText, char* encrypted) {
-    int plainTxtLen = strlen(plainText);
+void encryptTranspositional(const unsigned char* plainText, unsigned char* encrypted, size_t fileContentLen) {
     int keyLen = strlen(key);
-    int rows = (plainTxtLen + keyLen - 1) / keyLen;
+    int rows = (fileContentLen + keyLen - 1) / keyLen;
 
-    // init matrix
-    char matrix[rows][keyLen];
-    int idx = 0, i, j, k;
-    for (i = 0; i < rows; i++) {
-        for (j = 0; j < keyLen; j++) {
-            if (idx < plainTxtLen) {
+    unsigned char matrix[rows][keyLen];
+    int idx = 0;
+
+    // Fill matrix, pad with 0 (zero)
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < keyLen; j++) {
+            if (idx < fileContentLen) {
                 matrix[i][j] = plainText[idx++];
             } else {
-                matrix[i][j] = ' ';
+                matrix[i][j] = 0;  // pad with zero byte, safer for binary
             }
         }
     }
 
-    // encrypt
+    // Read columns in key order
     idx = 0;
-    for (k = 0; k < keyLen; k++) {
+    for (int k = 0; k < keyLen; k++) {
         int col = mappedKey[k];
-        for (i = 0; i < rows; i++) {
+        for (int i = 0; i < rows; i++) {
             encrypted[idx++] = matrix[i][col];
         }
     }
-
-    encrypted[idx] = '\0';
+    
+    // NO null termination here, encrypted data can contain zero bytes
 }
 
 
-void decrypt(const char* encrypted, char* decrypted) {
-    int encryptedLen = strlen(encrypted);
+
+void decryptTranspositional(const unsigned char* encrypted, unsigned char* decrypted, size_t fileContentLen) {
     int keyLen = strlen(key);
-    int rows = (encryptedLen + keyLen - 1) / keyLen;
+    int rows = (fileContentLen + keyLen - 1) / keyLen;
 
-    // init matrix
-    char matrix[rows][keyLen];
-    int idx = 0, k, i, j;
+    unsigned char matrix[rows][keyLen];
+    int idx = 0;
 
-    for (k = 0; k < keyLen; k++) {
+    // Fill matrix column-wise using mappedKey
+    for (int k = 0; k < keyLen; k++) {
         int col = mappedKey[k];
-        for (i = 0; i < rows; i++) {
-            if (idx < encryptedLen) {
+        for (int i = 0; i < rows; i++) {
+            if (idx < fileContentLen) {
                 matrix[i][col] = encrypted[idx++];
             } else {
-                matrix[i][col] = ' ';
+                matrix[i][col] = 0;
             }
         }
     }
 
-    // decrypt
+    // Read matrix row-wise to get decrypted text
     idx = 0;
-    for (i = 0; i < rows; i++) {
-        for (j = 0; j < keyLen; j++) {
-            decrypted[idx++] = matrix[i][j];
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < keyLen; j++) {
+            if (idx < fileContentLen) {
+                decrypted[idx++] = matrix[i][j];
+            }
         }
     }
-
-    decrypted[encryptedLen] = '\0';
+    // NO null termination here; the caller should handle length explicitly.
 }
