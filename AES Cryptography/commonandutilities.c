@@ -48,18 +48,18 @@ void print_block(const uint8_t* block) {
 
 
 void get_plain_text(uint8_t* plainText) {
-    char buffer[BLOCK_SIZE + 2];
+    unsigned char buffer[BLOCK_SIZE + 2];
 
     while (1) {
-        printf("Enter text to encrypt (or 'exit' to quit) (16 chars max): ");
+        printf("Enter text to encrypt (or 'exit' to quit) (16 unsigned chars max): ");
         if (!fgets(buffer, sizeof(buffer), stdin)) {
             printf("Input error. Try again.\n");
             continue;
         }
 
         if (strchr(buffer, '\n') == NULL) {
-            printf("Input too long. Max 16 characters allowed.\n");
-            while (getchar() != '\n');
+            printf("Input too long. Max 16 unsigned characters allowed.\n");
+            while (getunsigned char() != '\n');
             continue;
         }
 
@@ -69,29 +69,29 @@ void get_plain_text(uint8_t* plainText) {
             exit(0);
         }
 
-        strcpy((char*)plainText, buffer);
+        strcpy((unsigned char*)plainText, buffer);
         break;
     }
 }
 
 void get_key(uint8_t* key) {
-    char buffer[BLOCK_SIZE + 2];
+    unsigned char buffer[BLOCK_SIZE + 2];
 
     while (1) {
-        printf("Enter encryption key (16 chars max): ");
+        printf("Enter encryption key (16 unsigned chars max): ");
         if (!fgets(buffer, sizeof(buffer), stdin)) {
             printf("Input error. Try again.\n");
             continue;
         }
 
         if (strchr(buffer, '\n') == NULL) {
-            printf("Key too long. Max 16 characters allowed.\n");
-            while (getchar() != '\n');
+            printf("Key too long. Max 16 unsigned characters allowed.\n");
+            while (getunsigned char() != '\n');
             continue;
         }
 
         buffer[strcspn(buffer, "\n")] = '\0';
-        strcpy((char*)key, buffer);
+        strcpy((unsigned char*)key, buffer);
         break;
     }
 }

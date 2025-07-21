@@ -15,15 +15,15 @@
 #define CAPITAL_ALPHA_ASCII 65
 #define SMALL_ALPHA_ASCII 97
 
-char key[MAX_VALUE];
+unsigned char key[MAX_VALUE];
 
-void encrypt(const char* value, char* encrypted);
-void decrypt(const char* encrypted, char* decrypted);
+void encrypt(const unsigned char* value, unsigned char* encrypted);
+void decrypt(const unsigned char* encrypted, unsigned char* decrypted);
 
 int main() {
-    char value[MAX_VALUE];
-    char encrypted[MAX_VALUE];
-    char decrypted[MAX_VALUE];
+    unsigned char value[MAX_VALUE];
+    unsigned char encrypted[MAX_VALUE];
+    unsigned char decrypted[MAX_VALUE];
 
     while (1) {
         printf("========== PolyAlphabet Cipher ==========\n");
@@ -49,16 +49,16 @@ int main() {
     return 0;
 }
 
-void encrypt(const char* value, char* encrypted) {
+void encrypt(const unsigned char* value, unsigned char* encrypted) {
     int valLen = strlen(value);
     int keyLen = strlen(key);
 
     for (int i = 0; i < valLen; i++) {
-        char P = value[i];
-        char K = key[i % keyLen];
+        unsigned char P = value[i];
+        unsigned char K = key[i % keyLen];
 
         if (isalpha(P)) {
-            char base = isupper(P) ? CAPITAL_ALPHA_ASCII : SMALL_ALPHA_ASCII;
+            unsigned char base = isupper(P) ? CAPITAL_ALPHA_ASCII : SMALL_ALPHA_ASCII;
             K = isupper(P) ? toupper(K) : tolower(K);
             P -= base;
             K -= base;
@@ -71,16 +71,16 @@ void encrypt(const char* value, char* encrypted) {
     encrypted[valLen] = '\0';
 }
 
-void decrypt(const char* encrypted, char* decrypted) {
+void decrypt(const unsigned char* encrypted, unsigned char* decrypted) {
     int encLen = strlen(encrypted);
     int keyLen = strlen(key);
 
     for (int i = 0; i < encLen; i++) {
-        char C = encrypted[i];
-        char K = key[i % keyLen];
+        unsigned char C = encrypted[i];
+        unsigned char K = key[i % keyLen];
 
         if (isalpha(C)) {
-            char base = isupper(C) ? CAPITAL_ALPHA_ASCII : SMALL_ALPHA_ASCII;
+            unsigned char base = isupper(C) ? CAPITAL_ALPHA_ASCII : SMALL_ALPHA_ASCII;
             K = isupper(C) ? toupper(K) : tolower(K);
             C -= base;
             K -= base;

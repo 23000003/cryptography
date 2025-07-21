@@ -13,19 +13,19 @@
 
 // global vars
 #define MAX_VALUE 100
-char key[MAX_VALUE];
+unsigned char key[MAX_VALUE];
 int *mappedKey;
 
 
 // function prottype
-void encrypt(const char* plainText, char* encrypted);
-void decrypt(const char* encrypted, char* decrypted);
+void encrypt(const unsigned char* plainText, unsigned char* encrypted);
+void decrypt(const unsigned char* encrypted, unsigned char* decrypted);
 void map_encryption_key();
 
 int main() {
-    char plainText[MAX_VALUE];
-    char encrypted[MAX_VALUE];
-    char decrypted[MAX_VALUE];
+    unsigned char plainText[MAX_VALUE];
+    unsigned char encrypted[MAX_VALUE];
+    unsigned char decrypted[MAX_VALUE];
 
     while (1) {
         printf("========== Transpositional Cryptograph ==========\n");
@@ -60,7 +60,7 @@ void map_encryption_key(){
     
     for (int i = 0; i < keyLen; i++) mappedKey[i] = i;
 
-    // sort based on key characters (asc order)
+    // sort based on key unsigned characters (asc order)
     for (int i = 0; i < keyLen - 1; i++) {
         for (int j = i + 1; j < keyLen; j++) {
             if (key[mappedKey[i]] > key[mappedKey[j]]) {
@@ -72,13 +72,13 @@ void map_encryption_key(){
     }
 }
 
-void encrypt(const char* plainText, char* encrypted) {
+void encrypt(const unsigned char* plainText, unsigned char* encrypted) {
     int plainTxtLen = strlen(plainText);
     int keyLen = strlen(key);
     int rows = (plainTxtLen + keyLen - 1) / keyLen;
 
     // init matrix
-    char matrix[rows][keyLen];
+    unsigned char matrix[rows][keyLen];
     int idx = 0;
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < keyLen; j++) {
@@ -103,13 +103,13 @@ void encrypt(const char* plainText, char* encrypted) {
 }
 
 
-void decrypt(const char* encrypted, char* decrypted) {
+void decrypt(const unsigned char* encrypted, unsigned char* decrypted) {
     int encryptedLen = strlen(encrypted);
     int keyLen = strlen(key);
     int rows = (encryptedLen + keyLen - 1) / keyLen;
 
     // init matrix
-    char matrix[rows][keyLen];
+    unsigned char matrix[rows][keyLen];
     int idx = 0;
 
     for (int k = 0; k < keyLen; k++) {
