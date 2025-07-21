@@ -38,7 +38,7 @@ void encryptTranspositional(const unsigned char* plainText, unsigned char* encry
             if (idx < fileContentLen) {
                 matrix[i][j] = plainText[idx++];
             } else {
-                matrix[i][j] = 0;  // pad with zero byte, safer for binary
+                matrix[i][j] = ' ';  // pad with zero byte, safer for binary
             }
         }
     }
@@ -71,7 +71,7 @@ void decryptTranspositional(const unsigned char* encrypted, unsigned char* decry
             if (idx < fileContentLen) {
                 matrix[i][col] = encrypted[idx++];
             } else {
-                matrix[i][col] = 0;
+                matrix[i][col] = ' ';
             }
         }
     }

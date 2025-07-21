@@ -1,6 +1,13 @@
 #ifndef TRANSVERNAMAES_H
 #define TRANSVERNAMAES_H
 
+// --- Key Structure ---
+typedef struct {
+    long long int e;  // Public exponent
+    long long int d;  // Private exponent
+    long long int N;  // Modulus
+} RSAKey;
+
 #define MAX_LEN 500
 #define MAX_VALUE 100
 #define TOTAL_PROCESS 3

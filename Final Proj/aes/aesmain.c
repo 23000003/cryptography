@@ -9,17 +9,4 @@ void startAES() {
     uint8_t encrypted[BLOCK_SIZE];
     uint8_t decrypted[BLOCK_SIZE];
 
-    get_key(key);
-    get_plain_text(plainText);
-
-    printf("Plain Text: ");
-    print_block(plainText);
-
-    encrypt(plainText, encrypted);
-    printf("Encrypted: ");
-    print_block(encrypted);
-
-    decrypt(encrypted, decrypted);
-    printf("Decrypted: ");
-    print_block(decrypted);
 }

@@ -48,7 +48,7 @@ int main() {
     // create new file name
     snprintf(newFilename, sizeof(newFilename), "new.txt");
 
-    createFile(newFilename, modified, inputLength);
+    createFile(newFilename, modified, strlen(modified));
 
     return 0;
 }

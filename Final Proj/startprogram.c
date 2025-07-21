@@ -64,39 +64,45 @@ void startProgram(const unsigned char *input, unsigned char *output, size_t file
 
 void encryptAndDecrypt(const unsigned char *input, unsigned char *output, int *order, int operation, size_t fileContentLen) {
 
+    size_t currentLength = fileContentLen;
     unsigned char storeOutputState[MAX_LEN];
     unsigned char storeCipherState[MAX_LEN];
-    
+
     memcpy(storeCipherState, input, fileContentLen);
+
+    if(operation == 1) {
+        printf("\n===================================================");
+        printf("\nHash value: %d\n", hashContent(input));
+        printf("===================================================\n");
+    } else {
+        // Call AES
+    }
 
     for(int i = 0; i < TOTAL_PROCESS; i++){
         switch(order[i]) {
             case 0:
-                printf("\n\nTRANSPOSITIONAL\n\n");
+                printf("\n\nTRANSPOSITIONAL %s\n\n", storeCipherState);
                 map_encryption_key();
                 if(operation == 1){
-                    encryptTranspositional(storeCipherState, storeOutputState, fileContentLen);
+                    encryptTranspositional(storeCipherState, storeOutputState, currentLength);
+                    printf("Cipher Output: %s\n", storeOutputState);
                 } else {
-                    decryptTranspositional(storeCipherState, storeOutputState, fileContentLen);
+                    decryptTranspositional(storeCipherState, storeOutputState, currentLength);
                 }
-                memcpy(storeCipherState, storeOutputState, fileContentLen);
+                currentLength = strlen(storeOutputState);
+                memcpy(storeCipherState, storeOutputState, currentLength);
                 // call your transpositional encrypt/decrypt with fileContentLen, not MAX_LEN
                 break;
             case 1:
-                printf("\n\nVERNAM\n\n");
-                if(operation == 1){
-                    vernamEncrypt(storeCipherState, storeOutputState, fileContentLen);
-                } else {
-                    vernamDecrypt(storeCipherState, storeOutputState, fileContentLen);
-                }
+                printf("\n\nVERNAM %s\n\n", storeCipherState);
+                // if(operation == 1){
+                //     vernamEncrypt(storeCipherState, storeOutputState, fileContentLen);
+                // } else {
+                //     vernamDecrypt(storeCipherState, storeOutputState, fileContentLen);
+                // }
                 // Copy only fileContentLen bytes
-                memcpy(storeCipherState, storeOutputState, fileContentLen);
+                // memcpy(storeCipherState, storeOutputState, fileContentLen);
 
-                // For debugging, print hex:
-                printf("Encrypted bytes: ");
-                for (size_t j = 0; j < fileContentLen; j++) {
-                    printf("%02X ", storeOutputState[j]);
-                }
                 printf("\n");
 
                 break;
@@ -106,6 +112,20 @@ void encryptAndDecrypt(const unsigned char *input, unsigned char *output, int *o
                 break;
         }
     }
+
+    if(operation == 1) {
+        // Call AES
+    }
+
     // Finally copy only fileContentLen bytes to output buffer
-    memcpy(output, storeCipherState, fileContentLen);
+    printf("\nFinal output length: %zu bytes\n", currentLength);
+    printf("Cipher: %s\n", storeCipherState);
+    memcpy(output, storeCipherState, currentLength);
+    printf("Output: %s\n", output);
+
+    if(operation == 2) {
+        printf("\n===================================================");
+        printf("\nHash value: %d\n", hashContent(output));
+        printf("===================================================\n");
+    }
 }
