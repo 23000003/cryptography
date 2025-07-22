@@ -16,22 +16,20 @@ from .aes_operations import *
 
 
 def start_aes(action: str, input_bytes: bytes, key: str) -> bytes:
-
-    """ Get the first 16 bytes if greater than the input_bytes and """
-    """ Loop, Get, Append every 16 Bytes """
-
     key_bytes = key.encode()[:16]
     if len(key_bytes) < 16:
-        key_bytes = key_bytes.ljust(16, b' ')  # pad key if shorter than 16 bytes
+        key_bytes = key_bytes.ljust(16, b' ')
+
+    if action == "encrypt":
+        # Pad whole input before splitting into chunks
+        input_bytes = pkcs7_pad(input_bytes, 16)
+    elif action == "decrypt":
+        pass  # no padding for decrypt input
 
     output = bytearray()
 
     for i in range(0, len(input_bytes), 16):
         chunk = input_bytes[i:i+16]
-        # pad chunk if less than 16 bytes
-        if len(chunk) < 16:
-            chunk = chunk.ljust(16, b' ')
-        
         if action == "encrypt":
             encrypted_chunk = encrypt_aes(chunk, key_bytes)
             output.extend(encrypted_chunk)
@@ -40,13 +38,23 @@ def start_aes(action: str, input_bytes: bytes, key: str) -> bytes:
             output.extend(decrypted_chunk)
         else:
             raise ValueError("Invalid AES action. Use 'encrypt' or 'decrypt'.")
-    
-    return bytes(output)
+
+    if action == "decrypt":
+        # Unpad only after full decryption
+        return pkcs7_unpad(bytes(output))
+    else:
+        return bytes(output)
 
 
 def encrypt_aes(plaintext, master_key):
 
-    """Base on GFG docs and yt vid"""
+    """
+    Based on GFG docs and yt vid
+    Encrypts the plaintext using AES with the given key.
+    The plaintext is padded with spaces if its length is not a multiple of 16.
+    The AES encryption is performed in 10 rounds for a 128-bit key.
+    The function returns the encrypted ciphertext.
+    """
 
     NUMBER_OF_ROUNDS = 10
 
@@ -68,7 +76,13 @@ def encrypt_aes(plaintext, master_key):
 
 def decrypt_aes(ciphertext, master_key):
 
-    """Base on GFG docs and yt vid"""
+    """
+    Based on GFG docs and yt vid
+    Decrypts the ciphertext using AES with the given key.
+    The ciphertext is expected to be padded with spaces if its length is not a multiple of 16.
+    The AES decryption is performed in 10 rounds for a 128-bit key and 2 functions are inversed.
+    The function returns the decrypted plaintext.
+    """
 
     NUMBER_OF_ROUNDS = 9
 
@@ -87,3 +101,19 @@ def decrypt_aes(ciphertext, master_key):
 
     add_round_key(state, round_keys[:4])
     return matrix2text(state)
+
+def pkcs7_pad(data: bytes, block_size: int = 16) -> bytes:
+    pad_len = block_size - (len(data) % block_size)
+    return data + bytes([pad_len] * pad_len)
+
+def pkcs7_unpad(data: bytes) -> bytes:
+    if not data:
+        return data
+    pad_len = data[-1]
+    if pad_len < 1 or pad_len > 16:
+        # Invalid padding, just return data as is or raise error
+        return data
+    # Verify all the padding bytes are correct
+    if data[-pad_len:] != bytes([pad_len] * pad_len):
+        return data  # or raise error
+    return data[:-pad_len]

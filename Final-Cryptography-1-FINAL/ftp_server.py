@@ -4,35 +4,71 @@ from collections import defaultdict
 
 HOST = '0.0.0.0'
 PORT = 5001
-rooms = defaultdict(list)  # room_key -> list of sockets
-clients_info = defaultdict(dict)  # room_key -> {conn: addr} to keep track of clients' addresses
+
+rooms = defaultdict(list)
+clients_info = defaultdict(dict) # addr, pubkey
+
 
 def print_room_members(room_key):
-    members = [f"{addr[0]}:{addr[1]}" for addr in clients_info[room_key].values()]
+    members = [f"{info['addr'][0]}:{info['addr'][1]}" for info in clients_info[room_key].values()]
     print(f"[ROOM {room_key}] Current members ({len(members)}): {', '.join(members) if members else 'No members'}")
+
 
 def handle_client(conn, addr):
     room_key = None
     try:
-        # Step 1: Get room key
+        # Receive room key
         key_len = int.from_bytes(conn.recv(2), 'big')
         room_key = conn.recv(key_len).decode()
-        print(f"[+] {addr} joined room: {room_key}")
+        print(f"-> {addr} joined room: {room_key}")
 
+        # Enforce 2-person room limit
+        if len(rooms[room_key]) >= 2:
+            print(f"[ROOM {room_key}] Full. Rejecting {addr}")
+            conn.send(b"ROOM_FULL")
+            conn.close()
+            return
+
+        # Receive client's public key
+        pubkey_len = int.from_bytes(conn.recv(4), 'big')
+        pubkey_data = conn.recv(pubkey_len)
+
+        # Save connection and key
         rooms[room_key].append(conn)
-        clients_info[room_key][conn] = addr
+        clients_info[room_key][conn] = {
+            "addr": addr,
+            "pubkey": pubkey_data,
+        }
 
         print_room_members(room_key)
 
-        while True:
-            # Step 2: Receive filename
-            filename_len = int.from_bytes(conn.recv(4), 'big')
-            filename = conn.recv(filename_len).decode()
+        # Exchange keys with existing peer (if any)
+        for peer_conn in rooms[room_key]:
+            if peer_conn != conn:
+                # Send existing peer's public key to new client
+                peer_pubkey = clients_info[room_key][peer_conn]['pubkey']
+                conn.send(b"PEER_KEY")
+                conn.send(len(peer_pubkey).to_bytes(4, 'big'))
+                conn.send(peer_pubkey)
 
-            # Step 3: Receive filesize (size of hex string bytes)
+                # Send new client's key to existing peer
+                conn_pubkey = clients_info[room_key][conn]['pubkey']
+                peer_conn.send(b"PEER_KEY")
+                peer_conn.send(len(conn_pubkey).to_bytes(4, 'big'))
+                peer_conn.send(conn_pubkey)
+
+        # Handle file relay between two peers
+        while True:
+            # Receive file metadata
+            filename_len_bytes = conn.recv(4)
+            if not filename_len_bytes:
+                break
+
+            filename_len = int.from_bytes(filename_len_bytes, 'big')
+            filename = conn.recv(filename_len).decode()
             filesize = int.from_bytes(conn.recv(8), 'big')
 
-            # Step 4: Receive hex string data bytes
+            # Receive file content
             file_data = b''
             remaining = filesize
             while remaining > 0:
@@ -42,19 +78,18 @@ def handle_client(conn, addr):
                 file_data += chunk
                 remaining -= len(chunk)
 
-            print(f"[ROOM {room_key}] Received file: {filename} ({filesize} bytes)")
+            print(f"[ROOM {room_key}] {addr} sent file: {filename} ({filesize} bytes)")
 
-            # Step 5: Broadcast hex string bytes to others in the room
+            # Relay file to other peer
             for client in rooms[room_key]:
-                # Uncomment this if you want to exclude sender
-                # if client != conn:
-                try:
-                    client.send(len(filename).to_bytes(4, 'big'))
-                    client.send(filename.encode())
-                    client.send(filesize.to_bytes(8, 'big'))
-                    client.sendall(file_data)
-                except:
-                    pass
+                if client != conn:
+                    try:
+                        client.send(len(filename).to_bytes(4, 'big'))
+                        client.send(filename.encode())
+                        client.send(filesize.to_bytes(8, 'big'))
+                        client.sendall(file_data)
+                    except Exception as e:
+                        print(f"[!] Failed to send to peer: {e}")
 
     except Exception as e:
         print(f"[!] Error with {addr}: {e}")
@@ -68,6 +103,7 @@ def handle_client(conn, addr):
             print_room_members(room_key)
         conn.close()
 
+
 def main():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((HOST, PORT))
@@ -77,6 +113,7 @@ def main():
     while True:
         conn, addr = server.accept()
         threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
+
 
 if __name__ == "__main__":
     main()

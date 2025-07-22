@@ -91,3 +91,4 @@ def expand_key(master_key: bytes) -> Matrix:
                 byte = round_keys[i - 4][j] ^ round_keys[i - 1][j]
                 round_keys[i].append(byte)
     return round_keys
+

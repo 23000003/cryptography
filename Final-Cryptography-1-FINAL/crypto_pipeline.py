@@ -5,11 +5,18 @@ from ciphers.vernam import vernam_encrypt, vernam_decrypt
 from ciphers.rsa import encrypt_rsa, decrypt_rsa
 
 def hash_content(input_bytes: bytes) -> int:
+    """
+    Hashes the content of the input bytes.
+    """
     total = sum(b for b in input_bytes)
     length = len(input_bytes)
     return (total % 1000) + (length * 7)
 
 def determine_order(action: str, key: str) -> list[int]:
+    """
+    Determines the order of processing steps based on the action and key.
+    The order is based on the sum of the key's character values modulo the number of steps.
+    """
     total_sum = sum(key.encode('utf-8'))
     total_process = 3
 
@@ -25,27 +32,42 @@ def determine_order(action: str, key: str) -> list[int]:
 
 
 def start_encrypt_decrypt(action: str, key: str, inputFile: str, outputFile: str) -> None:
+    """
+    Starts the encryption or decryption process.
+    action: "encrypt" or "decrypt"
+    key: encryption/decryption key
+    inputFile: path to the input file
+    outputFile: path to the output file
+    """
     order = determine_order(action, key)
-
+    key = key.replace(" ", "")
     try:
         if action == "encrypt":
             with open(inputFile, 'rb') as f:
                 file_bytes = f.read()
+                
+            print('\n------------- Encryption Process -------------')
 
             print("\n====================================\n")
             print(f"Before Encryption Hash Value: {hash_content(file_bytes)}")
             print("\n====================================\n")
             result_data = start_loop_process(order, key, file_bytes, operation=1)
 
+            print("\n -> 4 AES")
             result_data = start_aes(action, result_data, key)
 
             with open(outputFile, 'wb') as f_out:
                 f_out.write(result_data)
+                
+            print("\n----------- End of Encryption Process ------------\n")
 
         elif action == "decrypt":
             with open(inputFile, 'rb') as f:
                 file_bytes = f.read()
-
+            
+            print('\n------------- Decryption Process -------------')
+            
+            print("\n -> 1 AES")
             decrypted_bytes = start_aes(action, file_bytes, key)
             result_data = start_loop_process(order, key, decrypted_bytes, operation=0)
             result_data = result_data.rstrip(b' ')
@@ -56,7 +78,8 @@ def start_encrypt_decrypt(action: str, key: str, inputFile: str, outputFile: str
 
             with open(outputFile, 'wb') as f_out:
                 f_out.write(result_data)
-
+            
+            print("\n----------- End of Decryption Process ------------\n")
         else:
             print("Unknown action")
             return
@@ -71,9 +94,6 @@ def start_encrypt_decrypt(action: str, key: str, inputFile: str, outputFile: str
         print(f"Error processing file: {e}")
 
 
-
-        
-
 def start_loop_process(order: list[int], key: str, input_data: bytes, operation: int) -> bytes:
     """
     order: list[int] with 3 steps
@@ -81,20 +101,19 @@ def start_loop_process(order: list[int], key: str, input_data: bytes, operation:
     input_data: bytes (the data to encrypt/decrypt)
     operation: 1 for encrypt, else decrypt
     """
-
     current_data = input_data
-
+    print(f"NEW KEY1: {key}")
     for step in order:
         if step == 0:
-            print("\n\nTRANSPOSITIONAL")
+            print("\n -> %d TRANSPOSITIONAL" % step)
             if operation == 1:
                 encrypted = encrypt_transpositional(current_data, key)
                 current_data = encrypted
             else:
                 decrypted = decrypt_transpositional(current_data, key)
                 current_data = decrypted
-        elif step == 1: # There is spaces when decrypted at last
-            print("\n\nVERNAM")
+        elif step == 1:
+            print("\n -> %d VERNAM" % step)
             if operation == 1:
                 encrypted = vernam_encrypt(current_data, key)
                 current_data = encrypted
@@ -103,18 +122,11 @@ def start_loop_process(order: list[int], key: str, input_data: bytes, operation:
                 current_data = decrypted
 
         elif step == 2:
-            print("\n\nRSA")
+            print("\n -> %d RSA" % step)
             if operation == 1:
-                # encrypt_rsa returns bytes (not base64 string) - update rsa.py accordingly
-                encrypted_bytes = encrypt_rsa(current_data)  # bytes
-                # convert to hex bytes to be consistent with other ciphers
-                current_data = encrypted_bytes.hex().encode('utf-8')
+                current_data = encrypt_rsa(current_data)
             else:
-                # current_data is hex bytes, convert back to bytes before decrypting
-                hex_str = current_data.decode('utf-8')
-                encrypted_bytes = bytes.fromhex(hex_str)
-                decrypted_bytes = decrypt_rsa(encrypted_bytes)
-                current_data = decrypted_bytes
+                current_data = decrypt_rsa(current_data)
         else:
             print(f"Unknown step in order: {step}")
 

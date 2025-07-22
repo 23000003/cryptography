@@ -1,41 +1,35 @@
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 import base64
-
-PUBLIC_KEY = '''
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDv/LnAoDkyewwjwqwgi9VSg51F
-+tUJ8cGwL6Rqdf5ZXrRCHI1KLjOxdFbzB81YjS76cOzezQRz2vuYDo7OvLfYSjFI
-fmukUxN+EliKkg0TwswylVroLBW9OKN70Zd62dc+gfkA3Vu8cDoRKzz6BKpo4yDo
-0D3FOsbNEj80opjmtQIDAQAB
-'''
-
-PRIVATE_KEY = '''
-MIICXAIBAAKBgQDv/LnAoDkyewwjwqwgi9VSg51F+tUJ8cGwL6Rqdf5ZXrRCHI1K
-LjOxdFbzB81YjS76cOzezQRz2vuYDo7OvLfYSjFIfmukUxN+EliKkg0TwswylVro
-LBW9OKN70Zd62dc+gfkA3Vu8cDoRKzz6BKpo4yDo0D3FOsbNEj80opjmtQIDAQAB
-AoGADuZtDgWkp3q2TT4X+8lSzFW5nQ+uzHhDI1JB7g43ZYsYvAYTy6hEs17ayyoP
-2NCjOw9p1Yd7IEpXVqCIw1M6QsfGdshy1NStsGpDHQYBBd8XiT8cWUaT/nmq5dEs
-i0wOITMZePLgI5/5pD4M6DIEJKskM+Rzlo47AiyRchL6pqECQQD+XAZNCl6R5wjI
-DrqW4v6Vw8mhdaPnQhPexmhHa1f9D7sA32A2H2N8M3dUDOwuG+DJhPkjVaQtFvT8
-mjDjSZTdAkEA8Yj4hncF/WnLTDSXmiWfpNwYwjfpjOj8e4/5rWHF1jWZMgl0l1AS
-Otna2dIbXp64dqsInITJTIDSQpbxuhrvuQJBAN9Ee6toLLa5KzYf55zGR13Ca9wz
-3NkDYVmsop/+E0/oXOdZK6SWTMcajeXTKgUXJ2r8M4vWgrOpcQXBeqQnVGkCQDYX
-e7j5bOD80Wemm5EM/fy4wd61ENvazbiKXNske17msAFRtsewSfTeFzIS6Mg++Yax
-9QLAhihY7T22ejo4kBkCQBdg2yKHQrmG+njGfLsdQG9MARFlnOfohoBFQTYdtrmf
-5JRNfwtPiis2YaoM2gP7z2qaunYbibDV5SYmtdD8GK0=
-'''
+from .rsa_pems import PRIVATE_KEY
+import ciphers.rsa_pems
 
 def chunk_data(data: bytes, chunk_size: int):
+    """
+    Splits the data into chunks of the specified size.
+    """
     for i in range(0, len(data), chunk_size):
         yield data[i:i+chunk_size]
 
 def encrypt_rsa(data: bytes) -> bytes:
-    key = RSA.import_key(base64.b64decode(PUBLIC_KEY))
+    
+    """
+    Encrypts data using RSA with OAEP padding.
+    Uses peer public key
+    The maximum plaintext chunk size is calculated as:
+        max_chunk_size = key_size_in_bytes - 2 * hash_size_in_bytes - 2
+        '-2' is padding overhead
+    """
+    print("\n\n=== Peer public key: ====\n")
+    print(ciphers.rsa_pems.peer_public_key)
+    key = RSA.import_key(base64.b64decode(ciphers.rsa_pems.peer_public_key))
     cipher = PKCS1_OAEP.new(key)
     
+    key_size_in_bytes = key.size_in_bytes()
+    hash_size_in_bytes = 32  # SHA-256
     encrypted_chunks = []
-    max_chunk_size = 86  # as calculated
-    
+    max_chunk_size = key_size_in_bytes - 2 * hash_size_in_bytes - 2 
+
     for chunk in chunk_data(data, max_chunk_size):
         encrypted_chunk = cipher.encrypt(chunk)
         encrypted_chunks.append(encrypted_chunk)
@@ -43,11 +37,17 @@ def encrypt_rsa(data: bytes) -> bytes:
     return b"".join(encrypted_chunks)
 
 def decrypt_rsa(data: bytes) -> bytes:
+
+    """
+    Decrypts data using RSA with OAEP padding.
+    The maximum ciphertext chunk size is equal to the key size in bytes.
+    """
+
     key = RSA.import_key(base64.b64decode(PRIVATE_KEY))
     cipher = PKCS1_OAEP.new(key)
     
     decrypted_chunks = []
-    chunk_size = key.size_in_bytes()  # 128 bytes for 1024-bit key
+    chunk_size = key.size_in_bytes()  # 256 bytes for 2048-bit key
     
     for i in range(0, len(data), chunk_size):
         encrypted_chunk = data[i:i+chunk_size]
