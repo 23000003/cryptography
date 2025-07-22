@@ -19,13 +19,6 @@ def start_aes(action: str, input_bytes: bytes, key: str) -> bytes:
     key_bytes = key.encode()[:16]
     if len(key_bytes) < 16:
         key_bytes = key_bytes.ljust(16, b' ')
-
-    if action == "encrypt":
-        # Pad whole input before splitting into chunks
-        input_bytes = pkcs7_pad(input_bytes, 16)
-    elif action == "decrypt":
-        pass  # no padding for decrypt input
-
     output = bytearray()
 
     for i in range(0, len(input_bytes), 16):
@@ -38,10 +31,6 @@ def start_aes(action: str, input_bytes: bytes, key: str) -> bytes:
             output.extend(decrypted_chunk)
         else:
             raise ValueError("Invalid AES action. Use 'encrypt' or 'decrypt'.")
-
-    if action == "decrypt":
-        # Unpad only after full decryption
-        return pkcs7_unpad(bytes(output))
     else:
         return bytes(output)
 
@@ -101,19 +90,3 @@ def decrypt_aes(ciphertext, master_key):
 
     add_round_key(state, round_keys[:4])
     return matrix2text(state)
-
-def pkcs7_pad(data: bytes, block_size: int = 16) -> bytes:
-    pad_len = block_size - (len(data) % block_size)
-    return data + bytes([pad_len] * pad_len)
-
-def pkcs7_unpad(data: bytes) -> bytes:
-    if not data:
-        return data
-    pad_len = data[-1]
-    if pad_len < 1 or pad_len > 16:
-        # Invalid padding, just return data as is or raise error
-        return data
-    # Verify all the padding bytes are correct
-    if data[-pad_len:] != bytes([pad_len] * pad_len):
-        return data  # or raise error
-    return data[:-pad_len]

@@ -102,7 +102,6 @@ def start_loop_process(order: list[int], key: str, input_data: bytes, operation:
     operation: 1 for encrypt, else decrypt
     """
     current_data = input_data
-    print(f"NEW KEY1: {key}")
     for step in order:
         if step == 0:
             print("\n -> %d TRANSPOSITIONAL" % step)
