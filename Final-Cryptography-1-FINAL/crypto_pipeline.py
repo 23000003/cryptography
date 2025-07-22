@@ -106,20 +106,15 @@ def start_loop_process(order: list[int], key: str, input_data: bytes, operation:
         if step == 0:
             print("\n -> %d TRANSPOSITIONAL" % step)
             if operation == 1:
-                encrypted = encrypt_transpositional(current_data, key)
-                current_data = encrypted
+                current_data = encrypt_transpositional(current_data, key)
             else:
-                decrypted = decrypt_transpositional(current_data, key)
-                current_data = decrypted
+                current_data = decrypt_transpositional(current_data, key)
         elif step == 1:
             print("\n -> %d VERNAM" % step)
             if operation == 1:
-                encrypted = vernam_encrypt(current_data, key)
-                current_data = encrypted
+                current_data = vernam_encrypt(current_data, key)
             else:
-                decrypted = vernam_decrypt(current_data, key)
-                current_data = decrypted
-
+                current_data = vernam_decrypt(current_data, key)
         elif step == 2:
             print("\n -> %d RSA" % step)
             if operation == 1:
